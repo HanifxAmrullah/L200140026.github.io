@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+    <head>
+		<title>Street View</title>
+        <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+        <style type="text/css">
+             
+			  #addressDiv { width: 800px; height: 500px; float: left;}
+			  ul.addressList {list-style-type:circle;}
+			  .align{
+    font-family:Harrington;
+    text-align: center;
+    }
+     #mapDiv {height: 420px; padding:2px;}
+    /* Remove the navbar's default margin-bottom and rounded borders */ 
+    .navbar {
+      margin-bottom: 0;
+      background-color: #B94629;
+      border-radius: 0;
+    }
+    
+    /* Set height of the grid so .sidenav can be 100% (adjust as needed) */
+    .row.content {height: 450px;
+    min-height:100%;
+    position:relative;
+}
+    
+    /* Set gray background color and 100% height */
+    .sidenav {
+      padding-top: 20px;
+      background-color: #f1f1f1;
+      height: 100%;
+      text-align: left;
+    }
+    
+    
+    /* On small screens, set height to 'auto' for sidenav and grid */
+    @media screen and (max-width: 767px) {
+      .sidenav {
+        height: auto;
+        padding: 15px;
+      }&libraries=drawing
+      .row.content {height:auto;} 
+    }
+  </style>
+   <script type="text/javascript"
+          src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAD4AWdow_i7GadDyRNXSZtMR7Z_8qlFBQ&libraries=drawing">
+    </script> 
+        <!-- Include Google Maps JS API -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+		
+        
+  <!-- Map creation is here -->
+        <script type="text/javascript">
+              //Defining map as a global variable to access from other functions
+              var map;
+			  
+			  //define global geocoder object
+			  var geocoder;
+			  
+			  //define global streetView object
+			  var streetView;
+			  
+              function initMap() {
+					//initialize info popup window
+					popup = new google.maps.InfoWindow();
+					
+					//initialize geocoder object
+					geocoder = new google.maps.Geocoder();
+					
+					//Enabling new cartography and themes
+                    google.maps.visualRefresh = true;
+
+                    //Setting starting options of map
+                    var mapOptions = {
+                          center: new google.maps.LatLng(-7.557155997472517,110.76918946579099),
+                          zoom: 10,
+                          mapTypeId: google.maps.MapTypeId.ROADMAP
+                    };
+
+                    //Getting map DOM element
+                    var mapElement = document.getElementById("mapDiv");
+
+                    //Creating a map with DOM element which is just obtained
+                    map = new google.maps.Map(mapElement, mapOptions);
+					
+					//initialize streetView object of type StreetViewPanorama
+					streetView = map.getStreetView();
+										
+				}
+			
+				//put a marker in the map for the addresses geocoded
+				function showAddressMarkerOnMapOrStreetView(result) {
+					var marker = new google.maps.Marker({
+						map:map,
+						position: result.geometry.location
+					});
+					
+					map.setCenter(result.geometry.location);
+					map.setZoom(16);
+				}
+				
+				//function for setting the streetView properties
+				function setStreetViewOptions(location)
+				{
+					//set the location of the streetView object
+					streetView.setPosition(location);
+					//set the "Point Of View" of streetView object
+					streetView.setPov({
+						heading: 0,
+						pitch: 10
+					});
+				}
+				
+				//function for listing addresses on the addressList element and calling the geocoding stuff
+				function listAddresses()
+				{
+					//get text input handler
+					var addressField = document.getElementById('addressField');
+					//get addressList <ul> element handle
+					var addressList = document.getElementById('addressList');
+					if (addressList.children.length == 0)
+					{
+						var placesText = document.getElementById('placesText');
+						placesText.innerHTML = 'Tempat yang pernah dikunjungi:';
+					}
+					//create a list item
+					var listItem = document.createElement('li');
+					//get the text in the input element and make it a list item
+					listItem.innerHTML = addressField.value;
+					listItem.addEventListener('click', function(){
+						pinAddressOnMapOrStreetView(listItem.innerHTML);
+					});
+					//append it to the <ul> element
+					addressList.appendChild(listItem);
+					
+					//call the geocoding function
+					pinAddressOnMapOrStreetView(addressField.value);
+				}
+				
+				//function for geocoding the addresses
+				function pinAddressOnMapOrStreetView(addressText)
+				{	
+					//send the geocoding request
+					geocoder.geocode({ 'address': addressText}, function(results, status) {
+      					//if the service is working properly...
+      					if (status == google.maps.GeocoderStatus.OK) {
+        					//show the first result on map, either on 
+        					showAddressMarkerOnMapOrStreetView(results[0]);
+							if (streetView.getVisible())
+							{
+								//set the streetView properties, its location and "Point Of View"
+								setStreetViewOptions(results[0].geometry.location);
+							}
+      					} else {
+        					alert('Cannot geocode because: ' + status);
+      					}
+    				});
+				}
+				
+				//function for displaying the familiar map view
+				function showMap()
+				{
+					var pinAddressBtn = document.getElementById('pinAddress');
+					pinAddressBtn.value = 'Tandai pada Peta';
+					streetView.setVisible(false);
+				}
+				
+				//function for displaying the streetView
+				function showStreetView()
+				{
+					var pinAddressBtn = document.getElementById('pinAddress');
+					pinAddressBtn.value = 'Pin Address On StreetView';
+					
+					setStreetViewOptions(map.getCenter());
+					streetView.setVisible(true);
+				}	
+        </script>
+    </head>
+	<body onload="initMap()" style="background: #f1f1f1">
+		<nav class="navbar navbar-inverse" style="background-color: #B94629">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>                        
+      </button>
+
+    </div>
+    <div class="collapse navbar-collapse" id="myNavbar">
+      <ul class="nav navbar-nav">
+        <li><a href="../Tugas6SIG.html"><span class="glyphicon glyphicon-home"></span> Home </a></li>
+        <li class="active"><a href="#">Street View</a></li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li><a href="https://l200140026.github.io/"><span class="glyphicon glyphicon-arrow-left"></span> Kembali Ke Index Tugas </a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+  
+<div class="container-fluid text-center">    
+  <div class="row content">
+    <div class="col-sm-2 sidenav">
+            <a href="mencariAlamat.html" class="btn btn-warning btn-block " > Mencari Alamat</a>
+            <a href="mencariKoordinat.html" class="btn btn-warning btn-block" >Mencari Koordinat</a>
+            <a href="menghitungKetinggian.html" class="btn btn-warning btn-block">Menghitung Ketinggian</a>
+            <a href="mencariJarak.html" class="btn btn-warning btn-block " >Mencari Jarak</a>
+            <a href="mencariRute.html" class="btn btn-warning btn-block " >Mencari Rute</a>
+            <a href="#" class="btn btn-warning btn-block active" style="color: black">Street View</a>  
+    </div>
+				<div class="col-md-10">
+						    <div>
+								<div id="mapDiv"/>
+							</div>
+							<div id="addressDiv" align="left">
+								Temukan Tempat:<br />
+								<input size="14px" class="form-group form-control" id="addressField" type="text" size="30"  placeholder="Masukkan Alamat...." />
+								<input class="btn btn-success" class="btn btn-success" type="button" id="pinAddress" value="Tandai pada Peta" onclick="listAddresses()">
+								<input class="btn btn-success" type="button" value="Tampilkan Peta" onclick="showMap()">
+								<input class="btn btn-success" type="button" value="Tampilkan StreetView" onclick="showStreetView()">
+								<p id="placesText"></p>
+								<ul id="addressList" class="addressList">
+								</ul>
+							</div>
+						</div>
+					</div>
+				</div>
+		
+    </body>
+</html>
